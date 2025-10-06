@@ -42,11 +42,11 @@ O algoritmo concorrente ganha desempenho sobre o algoritmo sequencial neste cen�
 Essa execução paralela permite que múltiplas combinações de senhas sejam testadas ao mesmo tempo, reduzindo significativamente o tempo total necessário para encontrar a senha, especialmente em sistemas com múltiplos núcleos de processamento. O ganho de desempenho é diretamente proporcional ao número de núcleos ou fios de execução disponíveis e à capacidade de distribuir a carga de trabalho de forma eficiente entre eles.
 
 \section{Projeto da solução concorrente}
-Para descobrir a string original, não podemos simplesmente reverter o resultado de uma função hash, dado o seu funcionamento. Portanto, dada uma string $hashmd5(x)$, queremos descobrir $x'$ tal que $hashmd5(x')=hashmd5(x)$ e consequentemente $x = x'$ 
+Para descobrir a string original, não podemos simplesmente reverter o resultado de uma função hash, dado o seu funcionamento. Portanto, dada uma string $hashmd5(x)$, queremos descobrir $x'$ tal que $hashmd5(x')=hashmd5(x)$ e, consequentemente, $x = x'$. 
 
 Nesse contexto, teremos um conjunto de strings de comprimento $N$, tal que $1 \leq N \leq M$, onde cada string será testada atomicamente, sem depender de outro resultado. Como cada teste é independente, é possível dividir o problema em subconjuntos e delegá-los à diferentes threads, a fim de ganhar o desempenho supracitado.
 
-Repare que aqui caímos em uma situação onde o tempo de execução pode ser muito alto. Suponha que $M > 10$. A string alvo pode ser qualquer conjunto de caracteres pré-determinados, portanto estou considerando apenas as letras maiúsculas e minúsculas (52 caracteres), os números (10 caracteres) e 33 caracteres especiais. No total, teremos 95 caracteres e $95^{11}$ ou mais senhas possíveis. Isso aumenta (e muito) o nosso tempo de execução. Por isso, manteremos $M=10$.
+Repare que aqui caímos em uma situação onde o tempo de execução pode ser muito alto. Suponha que $M > 10$. A string alvo pode ser qualquer conjunto de caracteres pré-determinados, portanto estou considerando apenas as letras maiúsculas e minúsculas (52 caracteres), os números (10 caracteres) e 33 caracteres especiais. No total, teremos 95 caracteres e $95^{M}$ senhas possíveis. Isso aumenta (e muito) o nosso tempo de execução. Por isso, manteremos $M=10$.
 
 Para obtenção de um menor tempo de execução, também utilizaremos o trabalho de análise de frequência de comprimento de senhas publicado por Mark Vainer, a fim de elencar senhas com comprimentos mais frequentes. \textbf{REVER SE IREMOS OU NÃO: }Além disso, não faremos uso de listas de senhas vazadas (como a famosa \texttt{rockyou.txt}).
 
