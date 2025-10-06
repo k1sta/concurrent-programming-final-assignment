@@ -35,7 +35,7 @@
 \section{Descrição do problema geral}
 O problema geral do ataque de força bruta de senhas em hash consiste em descobrir a senha original (texto plano) a partir do seu valor de hash. Dado um valor de hash, o atacante tenta gerar todas as combinações possíveis de caracteres, aplicando a mesma função de hash a cada combinação e comparando o resultado com o hash alvo. Se um hash gerado for igual ao hash alvo, a senha original correspondente é encontrada. Este processo é computacionalmente intensivo, especialmente para senhas longas e complexas, pois o espaço de busca de todas as combinações possíveis cresce exponencialmente.
 
-\textbf{REESCREVER SEGMENTO: A entrada para o programa sequencial é uma string de 32 caracteres representando o valor MD5 de uma senha que queremos descobrir. A saída é uma a string original que gerou a string MD5.}
+A entrada para o programa sequencial é uma string de 32 caracteres representando o valor MD5 de uma senha que queremos descobrir. A saída é uma a string original que gerou a string MD5.
 
 O algoritmo concorrente ganha desempenho sobre o algoritmo sequencial neste cenário devido à natureza paralelizável do problema. Em um algoritmo sequencial, a busca por senhas é realizada uma combinação após a outra, utilizando um único fio de execução (thread) ou processo. No entanto, o processo de gerar uma combinação de senha, calcular seu hash e comparar com o hash alvo é independente para cada combinação.
 
@@ -48,7 +48,9 @@ Nesse contexto, teremos um conjunto de strings de comprimento $N$, tal que $1 \l
 
 Repare que aqui caímos em uma situação onde o tempo de execução pode ser muito alto. A string alvo pode ser qualquer conjunto de caracteres pré-determinados, portanto estamos considerando apenas as letras maiúsculas e minúsculas (52 caracteres), os números (10 caracteres) e 33 caracteres especiais. No total, teremos 95 caracteres e $95^{M}$ senhas possíveis. Se $M$ for muito grande, o tempo de execução aumenta em 95 vezes a cada incremento de $M$, causando um grande tempo de execução. Então, fixaremos $M=10$.
 
-A fim de reduzir o tempo de execução, utilizaremos a análise de frequência de comprimento de senhas publicado em um trabalho do pesquisador Mark Vainer. O objetivo é elencar senhas com comprimentos mais frequentes para serem testadas primeiro. \textbf{REVER SE IREMOS OU NÃO: }Além disso, não faremos uso de listas de senhas vazadas (como a famosa \texttt{rockyou.txt}).
+A fim de reduzir o tempo de execução, utilizaremos a análise de frequência de comprimento de senhas publicado em um trabalho do pesquisador Mark Vainer. O objetivo é elencar senhas com comprimentos mais frequentes para serem testadas primeiro. Para isso, podemos utilizar documentos de senhas antigas vazadas (a famosa \texttt{rockyou.txt}) com o intuito de testar o desempenho.
+
+Além disso, utilizaremos CUDA para paralelizar o processamento e tentar ganhar desempenho usando as threads de uma GPU.
 
 \section{Casos de teste de corretude e desempenho}
 \begin{itemize}
@@ -67,14 +69,13 @@ A fim de reduzir o tempo de execução, utilizaremos a análise de frequência d
     \end{tabular}
 
     \end{center}
-
-        \item \textbf{Desempenho:} Para verificar o desempenho, utilizaremos a mesma entrada para o programa sequencial, o concorrente sem a análise de frequência do trabalho de Mark Veiner e o concorrente implementando a análise. Faremos o mesmo teste repetidas vezes para as mesmas entradas e faremos a média do tempo de execução.
-        \item \textbf{Uso de CUDA:} REVER SE IREMOS FAZER: Também iremos comparar o uso de CUDA, e no final iremos comparar o uso de tempo sem threads concorrentes, threads concorrentes somente de uma CPU, e o uso de threads de uma GPU.
+    
+    \item \textbf{Desempenho:} A fim de verficar o desempenho, utilizaremos a mesma entrada do programa sequencial para o programa concorrente sem a análise de frequência e o programa concorrente implementando a análise. Também iremos comparar o tempo de CPU sem threads concorrentes, threads concorrentes somente de uma CPU, e o uso de threads de uma CPU e uma GPU. Faremos o mesmo teste repetidas vezes para as mesmas entradas e calcularemos a média do tempo de execução.
 \end{itemize}
 
 \begin{thebibliography}{9}
     \bibitem{exemplo}
-    Sobrenome, N. \textit{Título do Livro}. Editora, Ano.
+    VAINER, M. \textit{Password Dataset Generation for Further Analysis by Machine Learning Methods}.
 
 
 \end{thebibliography}
