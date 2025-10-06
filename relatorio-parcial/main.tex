@@ -1,0 +1,65 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc} 
+\usepackage[brazil]{babel}   
+\usepackage{geometry} 
+\usepackage[T1]{fontenc}
+
+\geometry{
+    a4paper,
+    left=3cm,
+    right=2cm,
+    top=3cm,
+    bottom=2cm
+}
+
+\title{Brute-Force Password Cracking}
+\author{
+  Pedro Kury Kitagawa\\
+  \texttt{DRE:123375522}
+  \and
+  Pedro Freitas de Moura\\
+  \texttt{DRE: XXXXXXXXXX}
+  \and
+  Rafael Oliveira Chaffin\\
+  \texttt{XXXXXXXXXXXX}
+}
+
+\date{Relatório Parcial \\ Programação Concorrente (ICP-361) - 2025/2}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\section{Descrição do problema geral}
+O problema geral do ataque de força bruta de senhas em hash consiste em descobrir a senha original (texto plano) a partir do seu valor de hash. Dado um valor de hash, o atacante tenta gerar todas as combinações possíveis de caracteres, aplicando a mesma função de hash a cada combinação e comparando o resultado com o hash alvo. Se um hash gerado for igual ao hash alvo, a senha original correspondente é encontrada. Este processo é computacionalmente intensivo, especialmente para senhas longas e complexas, pois o espaço de busca de todas as combinações possíveis cresce exponencialmente.
+
+\textbf{REESCREVER SEGMENTO: A entrada para o programa sequencial é uma string de 32 caracteres representando o valor MD5 de uma senha que queremos descobrir. A saída é uma a string original que gerou a string MD5.}
+
+O algoritmo concorrente ganha desempenho sobre o algoritmo sequencial neste cenário devido à natureza paralelizável do problema. Em um algoritmo sequencial, a busca por senhas é realizada uma combinação após a outra, utilizando um único fio de execução (thread) ou processo. No entanto, o processo de gerar uma combinação de senha, calcular seu hash e comparar com o hash alvo é independente para cada combinação.
+
+Essa execução paralela permite que múltiplas combinações de senhas sejam testadas ao mesmo tempo, reduzindo significativamente o tempo total necessário para encontrar a senha, especialmente em sistemas com múltiplos núcleos de processamento. O ganho de desempenho é diretamente proporcional ao número de núcleos ou fios de execução disponíveis e à capacidade de distribuir a carga de trabalho de forma eficiente entre eles.
+
+\section{Projeto da solução concorrente}
+Para descobrir a string original, não podemos simplesmente reverter o resultado de uma função hash, dado o seu funcionamento. Portanto, dada uma string $hashmd5(x)$, queremos descobrir $x'$ tal que $hashmd5(x')=hashmd5(x)$ e consequentemente $x = x'$ 
+
+Nesse contexto, teremos um conjunto de strings de comprimento $N$, tal que $1 \leq N \leq M$, onde cada string será testada atomicamente, sem depender de outro resultado. Como cada teste é independente, é possível dividir o problema em subconjuntos e delegá-los à diferentes threads, a fim de ganhar o desempenho supracitado.
+
+Repare que aqui caímos em uma situação onde o tempo de execução pode ser muito alto. Suponha que $M > 10$. A string alvo pode ser qualquer conjunto de caracteres pré-determinados, portanto estou considerando apenas as letras maiúsculas e minúsculas (52 caracteres), os números (10 caracteres) e 33 caracteres especiais. No total, teremos 95 caracteres e $95^{11}$ ou mais senhas possíveis. Isso aumenta (e muito) o nosso tempo de execução. Por isso, manteremos $M=10$.
+
+Para obtenção de um menor tempo de execução, também utilizaremos o trabalho de análise de frequência de comprimento de senhas publicado por Mark Vainer, a fim de elencar senhas com comprimentos mais frequentes. \textbf{REVER SE IREMOS OU NÃO: }Além disso, não faremos uso de listas de senhas vazadas (como a famosa \texttt{rockyou.txt}).
+
+\section{Casos de teste de corretude e desempenho}
+
+
+\section{Referências bibliográficas}
+\begin{thebibliography}{9}
+    \bibitem{exemplo}
+    Sobrenome, N. \textit{Título do Livro}. Editora, Ano.
+
+
+\end{thebibliography}
+
+\end{document}
+
