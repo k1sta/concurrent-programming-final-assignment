@@ -1,0 +1,57 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc} 
+\usepackage[brazil]{babel}   
+\usepackage{geometry} 
+\usepackage[T1]{fontenc}
+
+\geometry{
+    a4paper,
+    left=3cm,
+    right=2cm,
+    top=3cm,
+    bottom=2cm
+}
+
+\title{Brute-Force Password Cracking}
+\author{
+  Pedro Kury Kitagawa\\
+  \texttt{DRE:xxxxxxxxxx}
+  \and
+  Pedro Freitas de Moura\\
+  \texttt{DRE: XXXXXXXXXX}
+  \and
+  Rafael Oliveira Chaffin\\
+  \texttt{XXXXXXXXXXXX}
+}
+
+\date{Relatório Parcial \\ Programação Concorrente (ICP-361) - 2025/2}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\section{Descrição do problema geral}
+O problema geral do ataque de força bruta de senhas em hash consiste em descobrir a senha original (texto plano) a partir do seu valor de hash. Dado um valor de hash, o atacante tenta gerar todas as combinações possíveis de caracteres, aplicando a mesma função de hash a cada combinação e comparando o resultado com o hash alvo. Se um hash gerado for igual ao hash alvo, a senha original correspondente é encontrada. Este processo é computacionalmente intensivo, especialmente para senhas longas e complexas, pois o espaço de busca de todas as combinações possíveis cresce exponencialmente.
+
+O algoritmo concorrente ganha desempenho sobre o algoritmo sequencial neste cenário devido à natureza paralelizável do problema. Em um algoritmo sequencial, a busca por senhas é realizada uma combinação após a outra, utilizando um único fio de execução (thread) ou processo. No entanto, o processo de gerar uma combinação de senha, calcular seu hash e comparar com o hash alvo é independente para cada combinação.
+
+Essa execução paralela permite que múltiplas combinações de senhas sejam testadas ao mesmo tempo, reduzindo significativamente o tempo total necessário para encontrar a senha, especialmente em sistemas com múltiplos núcleos de processamento. O ganho de desempenho é diretamente proporcional ao número de núcleos ou fios de execução disponíveis e à capacidade de distribuir a carga de trabalho de forma eficiente entre eles.
+
+\section{Projeto da solução concorrente}
+
+
+\section{Casos de teste de corretude e desempenho}
+
+
+\section{Referências bibliográficas}
+\begin{thebibliography}{9}
+    \bibitem{exemplo}
+    Sobrenome, N. \textit{Título do Livro}. Editora, Ano.
+
+
+\end{thebibliography}
+
+\end{document}
+
