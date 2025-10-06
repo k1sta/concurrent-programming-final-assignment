@@ -46,14 +46,31 @@ Para descobrir a string original, não podemos simplesmente reverter o resultado
 
 Nesse contexto, teremos um conjunto de strings de comprimento $N$, tal que $1 \leq N \leq M$, onde cada string será testada atomicamente, sem depender de outro resultado. Como cada teste é independente, é possível dividir o problema em subconjuntos e delegá-los à diferentes threads, a fim de ganhar o desempenho supracitado.
 
-Repare que aqui caímos em uma situação onde o tempo de execução pode ser muito alto. A string alvo pode ser qualquer conjunto de caracteres pré-determinados, portanto estamos considerando apenas as letras maiúsculas e minúsculas (52 caracteres), os números (10 caracteres) e 33 caracteres especiais. No total, teremos 95 caracteres e $95^{M}$ senhas possíveis. Se $M$ for muito grande, o tempo de execução aumenta em 95 vezes a cada incremento de $M$, causando um grande tempo de execução.
+Repare que aqui caímos em uma situação onde o tempo de execução pode ser muito alto. A string alvo pode ser qualquer conjunto de caracteres pré-determinados, portanto estamos considerando apenas as letras maiúsculas e minúsculas (52 caracteres), os números (10 caracteres) e 33 caracteres especiais. No total, teremos 95 caracteres e $95^{M}$ senhas possíveis. Se $M$ for muito grande, o tempo de execução aumenta em 95 vezes a cada incremento de $M$, causando um grande tempo de execução. Então, fixaremos $M=10$.
 
-Para obtenção de um menor tempo de execução, também utilizaremos o trabalho de análise de frequência de comprimento de senhas publicado por Mark Vainer, a fim de elencar senhas com comprimentos mais frequentes. \textbf{REVER SE IREMOS OU NÃO: }Além disso, não faremos uso de listas de senhas vazadas (como a famosa \texttt{rockyou.txt}).
+A fim de reduzir o tempo de execução, utilizaremos a análise de frequência de comprimento de senhas publicado em um trabalho do pesquisador Mark Vainer. O objetivo é elencar senhas com comprimentos mais frequentes para serem testadas primeiro. \textbf{REVER SE IREMOS OU NÃO: }Além disso, não faremos uso de listas de senhas vazadas (como a famosa \texttt{rockyou.txt}).
 
 \section{Casos de teste de corretude e desempenho}
+\begin{itemize}
+    \item \textbf{Corretude:} A fim de atestar a corretude, escolhemos 5 palavras arbitrárias e faremos o MD5 hash de cada uma delas. Usando a string que representa o hash como entrada, o programa deve retornar a string representando a palavra original como representadas abaixo:
+    \begin{center}
+    \begin{tabular}{ |c|c| } 
+     \hline
+     Input & Output esperado \\
+     \hline
+     cce36d2833156c007b1c6c644828ad37 & c0r1nTh14n \\
+     c3284ef15aa75f96b0945f19dad4b71f & senhaL3g@l \\
+     94f4eee8528d877893b0cd27f42d1a67 & x\_s3nh@\_x \\
+     80e58b2df5e73db726074346775494d8 & @@28122004 \\
+     b21f91d078060d5f655f5e8b5381f8a3 & mostarda  \\
+     \hline
+    \end{tabular}
 
+    \end{center}
 
-\section{Referências bibliográficas}
+        \item \textbf{Desempenho:} Para verificar o desempenho, utilizaremos a mesma entrada para o programa sequencial, o concorrente sem a análise de frequência do trabalho de Mark Veiner e o concorrente implementando a análise. Faremos o mesmo teste repetidas vezes para as mesmas entradas e faremos a média do tempo de execução.
+\end{itemize}
+
 \begin{thebibliography}{9}
     \bibitem{exemplo}
     Sobrenome, N. \textit{Título do Livro}. Editora, Ano.
