@@ -22,7 +22,7 @@
   \texttt{DRE: 123126096}
   \and
   Rafael Oliveira Chaffin\\
-  \texttt{XXXXXXXXXXXX}
+  \texttt{DRE: 121045260}
 }
 
 \date{Relatório Parcial \\ Programação Concorrente (ICP-361) - 2025/2}
@@ -39,7 +39,7 @@ A entrada para o programa sequencial é uma string de 32 caracteres representand
 
 O algoritmo concorrente ganha desempenho sobre o algoritmo sequencial neste cenário devido à natureza paralelizável do problema. Em um algoritmo sequencial, a busca por senhas é realizada uma combinação após a outra, utilizando um único fio de execução (thread) ou processo. No entanto, o processo de gerar uma combinação de senha, calcular seu hash e comparar com o hash alvo é independente para cada combinação.
 
-Essa execução paralela permite que múltiplas combinações de senhas sejam testadas ao mesmo tempo, reduzindo significativamente o tempo total necessário para encontrar a senha, especialmente em sistemas com múltiplos núcleos de processamento. O ganho de desempenho é diretamente proporcional ao número de núcleos ou fios de execução disponíveis e à capacidade de distribuir a carga de trabalho de forma eficiente entre eles.
+Essa execução paralela  permite que múltiplas combinações de senhas sejam testadas ao mesmo tempo, reduzindo significativamente o tempo total necessário para encontrar a senha, especialmente em sistemas com múltiplos núcleos de processamento. O ganho de desempenho é diretamente proporcional ao número de núcleos ou fios de execução disponíveis e à capacidade de distribuir a carga de trabalho de forma eficiente entre eles.
 
 \section{Projeto da solução concorrente}
 Para descobrir a string original, não podemos simplesmente reverter o resultado de uma função hash, dado o seu funcionamento. Portanto, dada uma string $hashmd5(x)$, queremos descobrir $x'$ tal que $hashmd5(x')=hashmd5(x)$ e consequentemente $x = x'$ 
