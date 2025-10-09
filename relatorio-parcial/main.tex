@@ -39,7 +39,7 @@ A entrada para o programa sequencial é uma string de 32 caracteres representand
 
 O algoritmo concorrente ganha desempenho sobre o algoritmo sequencial neste cenário devido à natureza paralelizável do problema. Em um algoritmo sequencial, a busca por senhas é realizada uma combinação após a outra, utilizando um único fio de execução (thread) ou processo. No entanto, o processo de gerar uma combinação de senha, calcular seu hash e comparar com o hash alvo é independente para cada combinação.
 
-Essa execução paralela  permite que múltiplas combinações de senhas sejam testadas ao mesmo tempo, reduzindo significativamente o tempo total necessário para encontrar a senha, especialmente em sistemas com múltiplos núcleos de processamento. O ganho de desempenho é diretamente proporcional ao número de núcleos ou fios de execução disponíveis e à capacidade de distribuir a carga de trabalho de forma eficiente entre eles.
+Essa execução paralela permite que múltiplas combinações de senhas sejam testadas ao mesmo tempo, reduzindo significativamente o tempo total necessário para encontrar a senha, especialmente em sistemas com múltiplos núcleos de processamento. O ganho de desempenho é diretamente proporcional ao número de núcleos ou fios de execução disponíveis e à capacidade de distribuir a carga de trabalho de forma eficiente entre eles.
 
 \section{Projeto da solução concorrente}
 Para descobrir a string original, não podemos simplesmente reverter o resultado de uma função hash, dado o seu funcionamento. Portanto, dada uma string $hashmd5(x)$, queremos descobrir $x'$ tal que $hashmd5(x')=hashmd5(x)$ e consequentemente $x = x'$ 
@@ -72,6 +72,17 @@ Além disso, utilizaremos CUDA para paralelizar o processamento e tentar ganhar 
     
     \item \textbf{Desempenho:} A fim de verficar o desempenho, utilizaremos a mesma entrada do programa sequencial para o programa concorrente sem a análise de frequência e o programa concorrente implementando a análise. Também iremos comparar o tempo de CPU sem threads concorrentes, threads concorrentes somente de uma CPU, e o uso de threads de uma CPU e uma GPU. Faremos o mesmo teste repetidas vezes para as mesmas entradas e calcularemos a média do tempo de execução.
 \end{itemize}
+
+\section{Dificuldades e Desafios Previstos}
+
+A implementação da solução concorrente apresenta desafios práticos e conceituais significativos que merecem consideração. A seguir, detalhamos as principais dificuldades previstas durante o desenvolvimento do algoritmo.
+
+\begin{itemize}
+    \item \textbf{Espaço Combinatório:} O desafio principal são as combinações do espaço de busca. Com um conjunto universo de 95 caracteres possíveis para senhas de até 10 caracteres de comprimento, o número de combinações a serem testadas é da ordem de $5.98 \times 10^{19}$. Mesmo em um sistema paralelo, o tempo necessário para uma busca exaustiva seria impraticável, tornando a solução inviável para senhas longas que não sejam encontradas nos estágios iniciais da busca.
+
+    \item \textbf{Curva de Aprendizagem em CUDA:} A falta de experiência prévia da equipe com a plataforma CUDA e com a programação paralela representa um risco técnico. A mera utilização da GPU não garante um ganho de desempenho expressivo imediato. Uma implementação subótima pode resultar em um desempenho levemente superior, ou até inferior, a uma solução concorrente bem implementada em CPU.
+\end{itemize}
+
 
 \begin{thebibliography}{9}
     \bibitem{exemplo}
