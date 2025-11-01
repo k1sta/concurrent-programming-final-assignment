@@ -23,7 +23,7 @@ const char charset[] = "abcdefghijklmnijklmnopqrstuvwxyz"
                        "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
 
 // password length frequency order (based on analysis)
-const int length_order[] = {6, 8, 7, 9, 5, 10, 4, 3, 2, 1}; // ajustar baseado na bibliografia
+const int length_order[] = {8, 7, 9, 10, 6, 5, 4, 3, 2, 1}; // ajustar baseado na bibliografia
 
 // thread data struct containing hash 
 typedef struct {
