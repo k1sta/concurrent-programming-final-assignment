@@ -30,7 +30,6 @@ typedef struct {
     char target_hash[33];   // 33 bytes (32 for the hash and 1 for the trailing char)
     int thread_id;          // thread id
     int num_threads;        // number of threads 
-    bool *found;  
     char *result;
     pthread_mutex_t *mutex;
 } thread_data_t;
