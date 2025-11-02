@@ -126,9 +126,6 @@ unsigned long long pow_ull(int base, int exp) {
 void hex_to_uint32(const char* hex, uint32_t* out) {
 	for (int i = 0; i<4; i++ ){
 		sscanf(hex + i * 8, "%8x", &out[i]);
-		uint32_t temp = out[i];
-		out[i] = ((temp & 0xFF) << 24) | ((temp & 0xFF00) << 8) | 
-                 ((temp & 0xFF0000) >> 8) | ((temp & 0xFF000000) >> 24);
 	}
 	/*
 Apparenty the byte-swapping was incorrect (still need to check this...)
