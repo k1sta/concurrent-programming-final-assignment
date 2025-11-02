@@ -7,16 +7,16 @@
 #include <stdbool.h>
 
 #define MAX_PASSWORD_LEN 10
-#define CHARSET_SIZE 95
+#define CHARSET_SIZE 62
 
 // flag for found
 bool found = false;
 
 // charset: lowercase, uppercase, digits, and (some) special characters
-const char charset[] = "abcdefghijklmnijklmnopqrstuvwxyz"
+const char charset[] = "abcdefghijklmnopqrstuvwxyz"
                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                       "0123456789"
-                       "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+                       "0123456789";
+                       //"!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
 
 // password length frequency order (based on analysis)
 const int length_order[] = {8, 7, 9, 10, 6, 5, 4, 3, 2, 1}; // ajustar baseado na bibliografia
