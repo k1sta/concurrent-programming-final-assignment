@@ -89,7 +89,11 @@ __device__ void generate_password(unsigned long long idx, int len, char* pwd) {
 
 __global__ void crack_kernel(unsigned long long start_idx, int length, int* found, char* result) {
     unsigned long long idx = start_idx + blockIdx.x * blockDim.x + threadIdx.x;
-    
+   
+    if (idx >= total_keyspace){
+      return;
+    }
+
     if (*found) return;
 
     char pwd[MAX_PASSWORD_LEN + 1];
@@ -120,12 +124,22 @@ unsigned long long pow_ull(int base, int exp) {
 }
 
 void hex_to_uint32(const char* hex, uint32_t* out) {
+	for (int i = 0; i<4; i++ ){
+		sscanf(hex + i * 8, "%8x", &out[i]);
+		uint32_t temp = out[i];
+		out[i] = ((temp & 0xFF) << 24) | ((temp & 0xFF00) << 8) | 
+                 ((temp & 0xFF0000) >> 8) | ((temp & 0xFF000000) >> 24);
+	}
+	/*
+Apparenty the byte-swapping was incorrect (still need to check this...)
+i will leave this part commented in case i messed up 
     for (int i = 0; i < 4; i++) {
         sscanf(hex + i * 8, "%8x", &out[i]);
         uint32_t temp = out[i];
         out[i] = ((temp & 0xFF) << 24) | ((temp & 0xFF00) << 8) | 
                  ((temp & 0xFF0000) >> 8) | ((temp & 0xFF000000) >> 24);
     }
+    */
 }
 
 int main() {
@@ -169,10 +183,13 @@ int main() {
         int length = length_order[l];
         unsigned long long total = pow_ull(CHARSET_SIZE, length);
         
-        printf("Testing passwords of length %d...\n", length);
-
+	printf("Testing passwords of length %d...\n", length);
+	//initializing total before loop
+	unsigned long long total = pow_ull(CHARSET_SIZE, length);
+	
         for (unsigned long long start = 0; start < total && !h_found; start += BLOCK_SIZE * BLOCKS_PER_GRID) {
-            crack_kernel<<<BLOCKS_PER_GRID, BLOCK_SIZE>>>(start, length, d_found, d_result);
+	    //passing it to the kernel
+            crack_kernel<<<BLOCKS_PER_GRID, BLOCK_SIZE>>>(start, length, total, d_found, d_result);
             cudaDeviceSynchronize();
             
             cudaMemcpy(&h_found, d_found, sizeof(int), cudaMemcpyDeviceToHost);
