@@ -147,19 +147,16 @@ void *brute_force_thread(void *arg) {
         pthread_mutex_unlock(data->mutex);
         break; // exit inner (i) loop
       }
-
-      // progress indicator (for thread 0? idk either...)
-      if (data->thread_id == 0 && i % 1000000 == 0) {
-        printf("Progress: Length %d - %.2f%%\r", 
-        length, (100.0 * (i - start)) / (end - start));
-        fflush(stdout);
-      }
     }
 
-    // this just cleans up the progress indicator line for thread 0 (again...)
-    if (data->thread_id == 0 && !found) {
-      printf("Progress: Length %d - 100.00%%\n", length);
+    // each thread reports its own completion for this length
+    pthread_mutex_lock(data->mutex);
+    if (!found) {
+      // Using \n to create a new line. The padding spaces clear the progress bar.
+      printf("Thread %d finished length %d.                         \n", data->thread_id, length);
+      fflush(stdout);
     }
+    pthread_mutex_unlock(data->mutex);
   }
 
   EVP_MD_CTX_free(ctx);    
