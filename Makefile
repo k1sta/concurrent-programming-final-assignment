@@ -9,3 +9,6 @@ md5crack-concurrent:
 
 frequency-analyser:
 	gcc src/frequency-analyser.c -o frequency-analyser
+
+md5crack-cuda:
+	nvcc src/md5crack-cuda.cu -o md5crack-cuda -O3
