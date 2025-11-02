@@ -87,14 +87,9 @@ bool crack_password_sequential(const char *target_hash, char *result) {
   EVP_MD_CTX *ctx = EVP_MD_CTX_new(); 
   EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
 
-  printf("Starting sequential brute force attack...\n");
-  printf("Target hash: %s\n\n", target_hash);
-
-  // loops for every length
+    // loops for every length
   for (int l = 0; l < 10; l++) {
     int length = length_order[l]; // grabs length from frequency analysis
-    printf("Testing passwords of length %d...\n", length);  
-      
     unsigned long long total = total_combinations(length);
     
     pwd_candidate[length] = '\0';
@@ -116,19 +111,9 @@ bool crack_password_sequential(const char *target_hash, char *result) {
 
       if (strcmp(hash_hex_output, target_hash) == 0) {        // if the candidate hash matches the target hash, its over! we won!
         strcpy(result, pwd_candidate); 
-        printf("Password found: %s\n\n", pwd_candidate);
         return true;
       }
-      
-      // dipslay the progress for the user
-      if (i % 1000000 == 0) {
-        printf("Progress: %.2f%%\r", (100.0 * i) / total);
-        fflush(stdout);
-        }
-    }
-    
-    // bad ending :(
-    printf("Length %d exhausted.\n\n", length);
+   }
   }
 
   return false;

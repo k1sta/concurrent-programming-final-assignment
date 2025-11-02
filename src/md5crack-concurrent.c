@@ -108,11 +108,6 @@ void *brute_force_thread(void *arg) {
     unsigned long long start = (total * data->thread_id) / data->num_threads;
     unsigned long long end = (total * (data->thread_id + 1)) / data->num_threads;
 
-    // progress indicator for thread 0 (the first one? idk man this needs review)
-    if (data->thread_id == 0) {
-      printf("Testing passwords of length %d...\n", length);
-    }
-
      // password-checking loop based on the assigned length
     for (unsigned long long i = start; i < end && !found; i++) {
       generate_pwd_candidate(i, length, pwd_candidate); // generate_pwd_candidate
@@ -134,25 +129,13 @@ void *brute_force_thread(void *arg) {
         if (!found) {
           found = true;
           strcpy(data->result, pwd_candidate);
-          // using \n to avoid mixing with progress indicator
-          printf("\nThread %d found password: %s\n", data->thread_id, pwd_candidate);
         }
         pthread_mutex_unlock(data->mutex);
         break; // exit inner (i) loop
       }
-            
-      // progress indicator (for thread 0? idk either...)
-      if (data->thread_id == 0 && i % 1000000 == 0) {
-        printf("Progress: Length %d - %.2f%%\r", 
-        length, (100.0 * (i - start)) / (end - start));
-        fflush(stdout);
-      }
     }
 
-    // this just cleans up the progress indicator line for thread 0 (again...)
-    if (data->thread_id == 0 && !found) {
-      printf("Progress: Length %d - 100.00%%\n", length);
-    }
+   }
   }
 
   EVP_MD_CTX_free(ctx);    
@@ -165,11 +148,7 @@ bool crack_password_concurrent(const char *target_hash, char *result) {
     thread_data_t thread_data[NUM_THREADS];
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-    printf("Starting concurrent brute force attack...\n");
-    printf("Target hash: %s\n", target_hash);
-    printf("Using %d threads\n\n", NUM_THREADS);
-
-    // creating threads
+       // creating threads
     for (int i = 0; i < NUM_THREADS; i++) {
         strcpy(thread_data[i].target_hash, target_hash);
         thread_data[i].thread_id = i;
@@ -185,13 +164,7 @@ bool crack_password_concurrent(const char *target_hash, char *result) {
         pthread_join(threads[i], NULL);
     }
 
-    if (found) {
-        printf("\nPassword found!\n");
-    } else {
-        printf("\nPassword not found.\n");
-    }
-
-    pthread_mutex_destroy(&mutex);
+  pthread_mutex_destroy(&mutex);
     return found;
 }
 

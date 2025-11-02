@@ -11,7 +11,7 @@
 #define CHARSET_SIZE 95
 
 // debug flag for detailed output (testing)
-const bool debug = true;
+const bool debug = false;
 
 // flag for found
 bool found = false;
@@ -147,7 +147,7 @@ void *brute_force_thread(void *arg) {
         pthread_mutex_unlock(data->mutex);
         break; // exit inner (i) loop
       }
-            
+
       // progress indicator (for thread 0? idk either...)
       if (data->thread_id == 0 && i % 1000000 == 0) {
         printf("Progress: Length %d - %.2f%%\r", 
