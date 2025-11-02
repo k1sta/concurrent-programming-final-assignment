@@ -87,7 +87,7 @@ __device__ void generate_password(unsigned long long idx, int len, char* pwd) {
     }
 }
 
-__global__ void crack_kernel(unsigned long long start_idx, int length, int* found, char* result) {
+__global__ void crack_kernel(unsigned long long start_idx, int length, unsigned long long total_keyspace, int* found, char* result) {
     unsigned long long idx = start_idx + blockIdx.x * blockDim.x + threadIdx.x;
    
     if (idx >= total_keyspace){
@@ -181,7 +181,6 @@ int main() {
 
     for (int l = 0; l < 10 && !h_found; l++) {
         int length = length_order[l];
-        unsigned long long total = pow_ull(CHARSET_SIZE, length);
         
 	printf("Testing passwords of length %d...\n", length);
 	//initializing total before loop
