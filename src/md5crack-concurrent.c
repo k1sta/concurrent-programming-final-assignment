@@ -198,7 +198,7 @@ bool crack_password_concurrent(const char *target_hash, char *result) {
 int main(int argc, char *argv[]) {
   // collecting target hash
   char target_hash[33];
-  scannf("%32s", target_hash);
+  scanf("%32s", target_hash);
   target_hash[32] = '\0';
     
 
