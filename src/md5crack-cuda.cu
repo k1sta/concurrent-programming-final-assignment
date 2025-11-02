@@ -67,11 +67,12 @@ __device__ void md5_hash(const char* msg, int len, uint32_t* result) {
             g = (7 * i) % 16;
         }
 
-        uint32_t temp = h3;
+        uint32_t temp = h0 + f + d_k[i] + w[g];
+        temp = leftrotate(temp, d_r[i]);
+        h0 = h3;
         h3 = h2;
         h2 = h1;
-        h1 = h1 + leftrotate((h0 + f + d_k[i] + w[g]), d_r[i]);
-        h0 = temp;
+        h1 = h1 + temp;
     }
 
     result[0] = h0 + 0x67452301;
@@ -124,19 +125,17 @@ unsigned long long pow_ull(int base, int exp) {
 }
 
 void hex_to_uint32(const char* hex, uint32_t* out) {
-	for (int i = 0; i<4; i++ ){
-		sscanf(hex + i * 8, "%8x", &out[i]);
+
+	uint8_t bytes[16];
+	for (int i = 0; i < 16; i++) {
+		unsigned int byte_val;
+		sscanf(hex + i * 2, "%2x", &byte_val);
+		bytes[i] = (uint8_t)byte_val;
 	}
-	/*
-Apparenty the byte-swapping was incorrect (still need to check this...)
-i will leave this part commented in case i messed up 
-    for (int i = 0; i < 4; i++) {
-        sscanf(hex + i * 8, "%8x", &out[i]);
-        uint32_t temp = out[i];
-        out[i] = ((temp & 0xFF) << 24) | ((temp & 0xFF00) << 8) | 
-                 ((temp & 0xFF0000) >> 8) | ((temp & 0xFF000000) >> 24);
-    }
-    */
+	// Convert bytes to uint32_t in little-endian order 
+	for (int i = 0; i < 4; i++) {
+		out[i] = bytes[i*4] | (bytes[i*4+1] << 8) | (bytes[i*4+2] << 16) | (bytes[i*4+3] << 24);
+	}
 }
 
 int main() {
