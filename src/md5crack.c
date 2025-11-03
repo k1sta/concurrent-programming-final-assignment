@@ -6,9 +6,9 @@
 #include <time.h>
 #include <stdbool.h>
 
-#define MAX_PASSWORD_LEN 10
+#define MAX_PASSWORD_LEN 8
 #define NUM_THREADS 16
-#define CHARSET_SIZE 62
+#define CHARSET_SIZE 26
 
 // debug flag for detailed output (testing)
 const bool debug = false;
@@ -17,13 +17,14 @@ const bool debug = false;
 bool found = false;
 
 // charset: lowercase, uppercase, digits, and (some) special characters
-const char charset[] = "abcdefghijklmnopqrstuvwxyz"
-                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                       "0123456789";
-                        //"!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+const char charset[] = "abcdefghijklmnopqrstuvwxyz";
+                       //"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                       //"0123456789";
+                       //"!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
 
 // password length frequency order (based on analysis)
-const int length_order[] = {8, 7, 9, 10, 6, 5, 4, 3, 2, 1}; // ajustar baseado na bibliografia
+//const int length_order[] = {8, 7, 9, 10, 6, 5, 4, 3, 2, 1}; // ajustar baseado na bibliografia
+const int length_order[] = {8, 7,6, 5, 4, 3, 2, 1};
 
 // thread data struct containing hash 
 typedef struct {
@@ -101,7 +102,7 @@ void *brute_force_thread(void *arg) {
   EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
 
   // loop through all lengths assigned (e.g., length_order)
-  for (int l = 0; l < 10 && !found; l++) {
+  for (int l = 0; l < MAX_PASSWORD_LEN && !found; l++) {
     int length = length_order[l]; // get the length to test
     
     pwd_candidate[length] = '\0'; // set only one time the trailing char
@@ -210,8 +211,8 @@ bool crack_password_sequential(const char *target_hash, char *result) {
   printf("Starting sequential brute force attack...\n");
   printf("Target hash: %s\n\n", target_hash);
 
-  // loops for every length
-  for (int l = 0; l < 10; l++) {
+  // loops for every lengthfor (int l = 0; l < 10; l++) {
+  for(int l = 0; l < MAX_PASSWORD_LEN; l++){
     int length = length_order[l]; // grabs length from frequency analysis
     printf("Testing passwords of length %d...\n", length);  
       
@@ -303,7 +304,9 @@ int main(int argc, char *argv[]) {
 
   // time measurement
   char result[MAX_PASSWORD_LEN + 1] = {0};
-  clock_t start = clock();
+  
+  struct timespec start_time, end_time;
+  clock_gettime(CLOCK_MONOTONIC, &start_time);
 
   // THE thing.
   bool success;
@@ -314,8 +317,9 @@ int main(int argc, char *argv[]) {
   }
 
   // ending time measurement
-  clock_t end = clock();
-  double time_spent = (double)(end - start) / CLOCKS_PER_SEC;
+  clock_gettime(CLOCK_MONOTONIC, &end_time);
+  double time_spent = (end_time.tv_sec - start_time.tv_sec);
+  time_spent += (end_time.tv_nsec - start_time.tv_nsec) / 1000000000.0;
 
   if (success) {
     printf("SUCCESS!\n");
