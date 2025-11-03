@@ -127,7 +127,7 @@ Esta abordagem garante uma correspondência bijetora entre índices e senhas can
 
 Para reduzir o tempo de execução médio, utilizamos análise de frequência de comprimentos de senhas baseada em trabalhos de pesquisa sobre padrões de senhas reais (como o estudo de Mark Vainer). A estratégia é testar comprimentos de senha na ordem de frequência observada em senhas reais, priorizando comprimentos mais comuns (8, 7, 9, 10) antes de comprimentos menos frequentes.
 
-A ordem implementada é: $\{8, 7, 9, 10, 6, 5, 4, 3, 2, 1\}$, baseada em estudos empíricos que mostram que senhas de 6 a 10 caracteres são mais comuns em datasets de senhas vazadas.
+A ordem implementada é: $\{8, 7, 9, 10, 6, 5, 4, 3, 2, 1\}$, baseada em uma análise feita com um programa auxiliar no arquivo de vazamento \texttt{rockyou.txt}, cujo é conhecido por ser a maior lista de senhas vazadas publicamente disponível e a mais utilizada para ataques de dicionário. 
 
 \subsection{Sincronização e Finalização}
 
@@ -149,12 +149,13 @@ Todas as threads verificam \texttt{found} em seus loops principais e param de pr
 O código foi implementado em C utilizando múltiplas abordagens de paralelização. A estrutura principal consiste em:
 
 \begin{itemize}
-    \item \texttt{md5crack-sequential.c}: Implementação sequencial standalone usando OpenSSL EVP
-    \item \texttt{md5crack-concurrent.c}: Implementação concorrente usando POSIX Threads (pthread) e OpenSSL EVP
-    \item \texttt{md5crack-cuda.cu}: Implementação paralela usando CUDA com MD5 implementado diretamente na GPU
-    \item \texttt{md5crack.c}: Versão combinada original com suporte a ambos os modos (sequencial e concorrente)
-    \item \texttt{frequency-analyser.c}: Ferramenta auxiliar para análise de frequência de comprimentos em wordlists
-    \item \texttt{Makefile}: Build system para compilação otimizada de todas as versões
+    \item \texttt{md5crack-sequential.c}: Implementação sequencial standalone usando OpenSSL EVP que respeita os padrões de input e output esperados pelo enunciado original;
+    \item \texttt{md5crack-concurrent.c}: Implementação concorrente usando POSIX Threads (pthread) e OpenSSL EVP que respeita os padrões de input e output esperados pelo enunciado original;
+    \item \texttt{md5crack-cuda.cu}: Implementação paralela usando CUDA com MD5 implementado diretamente na GPU com informações sobre tempo de execução e output de erros;
+    \item \texttt{md5crack.c}: Versão combinada original com suporte a ambos os modos (sequencial e concorrente) com informações sobre tempo de execução e output de erros;
+    \item \texttt{frequency-analyser.c}: Ferramenta auxiliar para análise de frequência de comprimentos em wordlists;
+    \item \texttt{Makefile}: Build system para compilação otimizada de todas as versões;
+    \item \texttt{test-suite.sh}: Script Bash para testar as versões concorrente, sequencial e em CUDA do brute-forcer.
 \end{itemize}
 
 A separação dos arquivos permite melhor organização, manutenção e comparação de desempenho entre diferentes abordagens de paralelização.
@@ -434,4 +435,5 @@ BUTENHOF, D. R. \textit{Programming with POSIX Threads}. Addison-Wesley Professi
 \end{thebibliography}
 
 \end{document}
+
 
