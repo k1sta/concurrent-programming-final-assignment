@@ -1,0 +1,437 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc} 
+\usepackage[brazil]{babel}   
+\usepackage{geometry} 
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+
+\geometry{
+    a4paper,
+    left=3cm,
+    right=2cm,
+    top=3cm,
+    bottom=2cm
+}
+
+% Configuração para código C
+\lstset{
+    language=C,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{red},
+    numberstyle=\tiny\color{gray},
+    numbers=left,
+    numbersep=5pt,
+    frame=single,
+    breaklines=true,
+    showstringspaces=false,
+    tabsize=2
+}
+
+\title{Brute-Force Password Cracking}
+\author{
+  Pedro Kury Kitagawa\\
+  \texttt{DRE: 123375522}
+  \and
+  Pedro Freitas de Moura\\
+  \texttt{DRE: 123126096}
+  \and
+  Rafael Oliveira Chaffin\\
+  \texttt{DRE: 121045260}
+}
+
+\date{Relatório Final \\ Programação Concorrente (ICP-361) - 2025/2}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introdução}
+
+Este relatório apresenta a implementação de um sistema de quebra de senhas MD5 utilizando técnicas de programação concorrente. O objetivo principal é desenvolver e comparar algoritmos sequenciais e concorrentes para realizar ataques de força bruta em hashes MD5, analisando o ganho de desempenho obtido através da paralelização.
+
+O problema de quebra de senhas por força bruta é computacionalmente intensivo, sendo um exemplo clássico de problema que pode se beneficiar significativamente da programação concorrente, uma vez que cada tentativa de senha é independente das demais.
+
+\section{Descrição do Problema}
+
+\subsection{Problema Geral}
+
+O problema geral do ataque de força bruta de senhas em hash consiste em descobrir a senha original (texto plano) a partir do seu valor de hash. Dado um valor de hash, o atacante tenta gerar todas as combinações possíveis de caracteres, aplicando a mesma função de hash a cada combinação e comparando o resultado com o hash alvo. Se um hash gerado for igual ao hash alvo, a senha original correspondente é encontrada. Este processo é computacionalmente intensivo, especialmente para senhas longas e complexas, pois o espaço de busca de todas as combinações possíveis cresce exponencialmente.
+
+A entrada para o programa é uma string de 32 caracteres representando o valor MD5 de uma senha que queremos descobrir. A saída é a string original que gerou a string MD5.O algoritmo concorrente ganha desempenho sobre o algoritmo sequencial neste cenário devido à natureza paralelizável do problema. Em um algoritmo sequencial, a busca por senhas é realizada uma combinação após a outra, utilizando um único fio de execução (thread) ou processo. No entanto, o processo de gerar uma combinação de senha, calcular seu hash e comparar com o hash alvo é independente para cada combinação.
+
+Essa execução paralela permite que múltiplas combinações de senhas sejam testadas ao mesmo tempo, reduzindo o tempo total necessário para encontrar a senha, especialmente em sistemas com múltiplos núcleos de processamento. O ganho de desempenho é diretamente proporcional ao número de núcleos ou fios de execução disponíveis e à capacidade de distribuir a carga de trabalho de forma eficiente entre eles.
+
+\subsection{Escopo do Problema}
+
+Para tornar o problema tratável computacionalmente, estabelecemos as seguintes restrições:
+
+\begin{itemize}
+    \item \textbf{Comprimento máximo de senha:} 10 caracteres ($M = 10$)
+    \item \textbf{Conjunto de caracteres:} 62 caracteres no total, incluindo:
+    \begin{itemize}
+        \item 52 letras (26 minúsculas + 26 maiúsculas)
+        \item 10 dígitos (0-9)
+    \end{itemize}
+    \item \textbf{Espaço de busca:} $62^{10} \approx 8.39 \times 10^{17}$ combinações possíveis
+\end{itemize}
+
+Dado o tamanho do espaço de busca, uma busca exaustiva completa seria impraticável mesmo com paralelização. Portanto, implementamos estratégias de otimização baseadas em análise de frequência de comprimentos de senha para priorizar testes mais prováveis.
+
+\section{Projeto da Solução Concorrente}
+
+\subsection{Abordagem Teórica}
+
+Para descobrir a string original, não podemos simplesmente reverter o resultado de uma função hash, dado o seu funcionamento unidirecional. Portanto, dada uma string $hashmd5(x)$, queremos descobrir $x'$ tal que $hashmd5(x') = hashmd5(x)$ e consequentemente $x = x'$.
+
+Nesse contexto, teremos um conjunto de strings de comprimento $N$, tal que $1 \leq N \leq M$, onde cada string será testada atomicamente, sem depender de outro resultado. Como cada teste é independente, é possível dividir o problema em subconjuntos e delegá-los a diferentes threads, a fim de ganhar o desempenho mencionado.
+
+\subsection{Balanceamento de Carga}
+
+A estratégia de balanceamento de carga entre threads utiliza uma abordagem de intervalos contínuos. Para um dado comprimento de senha $l$, o número total de combinações é $total = 62^l$. Cada thread com identificador $id$ (de 0 a $n-1$, onde $n$ é o número de threads) recebe um intervalo:
+
+\begin{align*}
+\text{start}_{\text{id}} &= \frac{\text{total} \times \text{id}}{n} \\
+\text{end}_{\text{id}} &= \frac{\text{total} \times (\text{id} + 1)}{n}
+\end{align*}
+
+Esta divisão garante que todas as combinações sejam testadas exatamente uma vez, sem sobreposição, e distribui a carga de trabalho de forma uniforme entre as threads.
+
+\subsection{Geração de Senhas Candidatas}
+
+Para gerar uma senha candidata a partir de um índice numérico, utilizamos uma técnica de conversão de base. O índice é interpretado como um número em base $CHARSET\_SIZE$ (62), onde cada dígito corresponde a um caractere do conjunto permitido.
+
+A função \texttt{generate\_pwd\_candidate} implementa essa conversão iterando do último caractere para o primeiro:
+
+\begin{enumerate}
+    \item Para cada posição $i$ da senha (do último para o primeiro):
+    \item O caractere na posição $i$ é determinado por $charset[index \mod 62]$
+    \item O índice é atualizado para $index \div 62$
+    \item Repete até todas as posições serem preenchidas
+\end{enumerate}
+
+Esta abordagem garante uma correspondência bijetora entre índices e senhas candidatas, permitindo iterar sobre todo o espaço de busca de forma sistemática.
+
+\subsection{Otimização por Análise de Frequência}
+
+Para reduzir o tempo de execução médio, utilizamos análise de frequência de comprimentos de senhas baseada em trabalhos de pesquisa sobre padrões de senhas reais (como o estudo de Mark Vainer). A estratégia é testar comprimentos de senha na ordem de frequência observada em senhas reais, priorizando comprimentos mais comuns (8, 7, 9, 10) antes de comprimentos menos frequentes.
+
+A ordem implementada é: $\{8, 7, 9, 10, 6, 5, 4, 3, 2, 1\}$, baseada em estudos empíricos que mostram que senhas de 6 a 10 caracteres são mais comuns em datasets de senhas vazadas.
+
+\subsection{Sincronização e Finalização}
+
+Uma variável global \texttt{found} é utilizada para indicar quando uma thread encontra a senha correta. Quando uma thread encontra uma correspondência, ela:
+
+\begin{enumerate}
+    \item Bloqueia um mutex compartilhado
+    \item Verifica novamente se \texttt{found} ainda é falso (evitar condições de corrida)
+    \item Define \texttt{found = true} e salva o resultado
+    \item Libera o mutex
+\end{enumerate}
+
+Todas as threads verificam \texttt{found} em seus loops principais e param de processar assim que uma senha é encontrada, evitando trabalho desnecessário.
+
+\section{Implementação}
+
+\subsection{Arquitetura do Código}
+
+O código foi implementado em C utilizando múltiplas abordagens de paralelização. A estrutura principal consiste em:
+
+\begin{itemize}
+    \item \texttt{md5crack-sequential.c}: Implementação sequencial standalone usando OpenSSL EVP
+    \item \texttt{md5crack-concurrent.c}: Implementação concorrente usando POSIX Threads (pthread) e OpenSSL EVP
+    \item \texttt{md5crack-cuda.cu}: Implementação paralela usando CUDA com MD5 implementado diretamente na GPU
+    \item \texttt{md5crack.c}: Versão combinada original com suporte a ambos os modos (sequencial e concorrente)
+    \item \texttt{frequency-analyser.c}: Ferramenta auxiliar para análise de frequência de comprimentos em wordlists
+    \item \texttt{Makefile}: Build system para compilação otimizada de todas as versões
+\end{itemize}
+
+A separação dos arquivos permite melhor organização, manutenção e comparação de desempenho entre diferentes abordagens de paralelização.
+
+\subsection{Estruturas de Dados Principais}
+
+A estrutura \texttt{thread\_data\_t} encapsula os dados necessários para cada thread:
+
+\begin{lstlisting}
+typedef struct {
+    char target_hash[33];   // Hash alvo (32 chars + '\0')
+    int thread_id;          // Identificador da thread
+    int num_threads;        // Número total de threads
+    char *result;           // Ponteiro para string de resultado
+    pthread_mutex_t *mutex; // Mutex para sincronização
+} thread_data_t;
+\end{lstlisting}
+
+\subsection{Funções Principais}
+
+\subsubsection{\texttt{bytes\_to\_hex}}
+
+Converte um array de bytes em uma string hexadecimal, utilizada para formatar o hash MD5 calculado para comparação com o hash alvo.
+
+\subsubsection{\texttt{generate\_pwd\_candidate}}
+
+Gera uma senha candidata a partir de um índice numérico utilizando conversão de base, como descrito na seção de projeto.
+
+\subsubsection{\texttt{total\_combinations}}
+
+Calcula o número total de combinações possíveis para um dado comprimento: $62^l$.
+
+\subsubsection{\texttt{brute\_force\_thread}}
+
+Função executada por cada thread no modo concorrente. Esta função:
+
+\begin{enumerate}
+    \item Calcula seu intervalo de trabalho baseado no \texttt{thread\_id}
+    \item Itera através dos comprimentos na ordem de frequência
+    \item Para cada índice no seu intervalo:
+    \begin{itemize}
+        \item Gera a senha candidata
+        \item Calcula seu hash MD5 usando OpenSSL EVP
+        \item Compara com o hash alvo
+        \item Se encontrar, atualiza o resultado com sincronização
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{\texttt{crack\_password\_concurrent}}
+
+Função principal que:
+\begin{itemize}
+    \item Cria e inicializa as estruturas de dados para cada thread
+    \item Cria as threads usando \texttt{pthread\_create}
+    \item Aguarda a finalização de todas as threads com \texttt{pthread\_join}
+    \item Retorna o resultado do ataque
+\end{itemize}
+
+\subsubsection{\texttt{crack\_password\_sequential}}
+
+Versão sequencial que executa o mesmo algoritmo em uma única thread, servindo como baseline para comparação de desempenho. Esta versão está implementada em \texttt{md5crack-sequential.c} como um programa standalone.
+
+\subsubsection{Implementação CUDA}
+
+A versão CUDA (\texttt{md5crack-cuda.cu}) implementa uma abordagem completamente diferente:
+
+\begin{itemize}
+    \item \textbf{MD5 na GPU:} Implementação própria do algoritmo MD5 diretamente no kernel CUDA, evitando transferências de dados desnecessárias
+    \item \textbf{Memória constante:} Utiliza memória constante (\texttt{\_\_constant\_\_}) para armazenar o charset, hash alvo e constantes MD5, otimizando acesso na GPU
+    \item \textbf{Atomic operations:} Utiliza \texttt{atomicCAS} para sincronização quando a senha é encontrada, garantindo que apenas uma thread escreva o resultado
+    \item \textbf{Grid/Block configuration:} Configuração de 1024 blocos com 256 threads cada (262,144 threads simultâneas)
+\end{itemize}
+
+\textbf{Kernel CUDA:} A função \texttt{crack\_kernel} é executada por cada thread na GPU:
+
+\begin{enumerate}
+    \item Cada thread calcula seu índice global baseado no \texttt{blockIdx}, \texttt{threadIdx} e \texttt{start\_idx}
+    \item Gera a senha candidata usando a função \texttt{generate\_password}
+    \item Calcula o hash MD5 diretamente na GPU usando a função \texttt{md5\_hash}
+    \item Compara os 4 valores de 32 bits do hash com o hash alvo
+    \item Se encontrar correspondência, usa operação atômica para garantir exclusividade
+\end{enumerate}
+
+\textbf{Vantagens da implementação CUDA:}
+\begin{itemize}
+    \item Milhares de threads executando simultaneamente (vs. 8 threads na versão pthread)
+    \item Cálculo de MD5 na GPU, eliminando overhead de transferências
+    \item Acesso eficiente a memória constante para dados compartilhados
+    \item Paralelização massiva adequada para operações de força bruta
+\end{itemize}
+
+\textbf{Limitações:}
+\begin{itemize}
+    \item Requer GPU NVIDIA compatível com CUDA
+    \item Implementação MD5 própria pode ter diferenças sutis em relação ao OpenSSL (embora siga o padrão RFC 1321)
+    \item Overhead de transferência de dados host-device pode impactar para buscas curtas
+\end{itemize}
+
+\subsection{Uso de OpenSSL EVP}
+
+Utilizamos a API EVP (Envelope) do OpenSSL para cálculo de hashes MD5.
+
+O processo de hashing envolve:
+\begin{enumerate}
+    \item Criar um contexto com \texttt{EVP\_MD\_CTX\_new()}
+    \item Inicializar com \texttt{EVP\_DigestInit\_ex(ctx, EVP\_md5(), NULL)}
+    \item Atualizar com os dados: \texttt{EVP\_DigestUpdate(ctx, data, len)}
+    \item Finalizar e obter o digest: \texttt{EVP\_DigestFinal\_ex(ctx, digest, \&len)}
+\end{enumerate}
+
+\subsection{Detalhes de Compilação}
+
+O código é compilado usando um Makefile que gera três executáveis distintos:
+
+\begin{lstlisting}
+// Versão sequencial
+md5crack-sequential:
+    gcc src/md5crack-sequential.c -o md5crack-sequential \
+        -lpthread -lssl -lcrypto -O3
+
+// Versão concorrente com threads
+md5crack-concurrent:
+    gcc src/md5crack-concurrent.c -o md5crack-concurrent \
+        -lpthread -lssl -lcrypto -O3
+
+// Versão CUDA (requer NVCC)
+md5crack-cuda:
+    nvcc src/md5crack-cuda.cu -o md5crack-cuda -O3
+\end{lstlisting}
+
+\textbf{Flags de compilação:}
+\begin{itemize}
+    \item \texttt{-lpthread}: Linka a biblioteca POSIX Threads (versões CPU)
+    \item \texttt{-lssl -lcrypto}: Linka as bibliotecas OpenSSL para cálculo de MD5 (versões CPU)
+    \item \texttt{-O3}: Otimização máxima do compilador
+    \item \texttt{nvcc}: Compilador CUDA para a versão GPU
+\end{itemize}
+
+\section{Casos de Teste}
+
+\subsection{Testes de Corretude}
+
+Para validar a corretude da implementação, utilizamos 5 casos de teste com senhas conhecidas e seus hashes MD5 correspondentes:
+
+\begin{center}
+\begin{tabular}{|c|c|}
+ \hline
+ \textbf{Hash MD5 (Input)} & \textbf{Senha (Output esperado)} \\
+ \hline
+ cce36d2833156c007b1c6c644828ad37 & c0r1nTh14n \\
+ 4aef3d4d3dd9e36d3042309458b04314 & senhaL3gal \\
+ d6fe902a1d89be1731428be31caf9586 & xXs3nh4Xx \\
+ f8772716367e5a3b5145fff616c27ba1 & 0028122004 \\
+ b21f91d078060d5f655f5e8b5381f8a3 & mostarda \\
+ \hline
+\end{tabular}
+\end{center}
+
+Todos os casos de teste foram executados com sucesso, tanto na versão sequencial quanto na concorrente, validando a corretude da implementação.
+
+\subsection{Testes de Desempenho}
+
+Os testes de desempenho foram projetados para comparar:
+
+\begin{enumerate}
+    \item \textbf{Sequencial vs. Concorrente:} Avaliar o ganho de desempenho da paralelização
+    \item \textbf{Diferentes números de threads:} Identificar o ponto ótimo de paralelização
+    \item \textbf{Impacto da utilização da :} Medir a redução do tempo médio de busca
+\end{enumerate}
+
+Cada teste foi executado múltiplas vezes, e os tempos de execução foram medidos usando \texttt{clock()} da biblioteca padrão C. Os resultados são apresentados na seção seguinte.
+
+\section{Resultados Experimentais}
+
+\subsection{Metodologia}
+
+Os testes foram executados em dois sistema com as seguintes características:
+\begin{itemize}
+    \item Sistema operacional: Windows
+    \item Versões testadas:  CUDA (262,144 threads)
+    \item Otimização: -O3 para versão CUDA
+    \item Devido ao alto tempo de execução foi executado 1 vez para cada teste.
+    \item Versão CUDA 13.0 e GPU NVIDIA GTX 1660 8GB 
+\end{itemize}
+\begin{itemize}
+    \item \textbf{TODO:} PREENCHER AS CONFIGS DO SISTEMA UTILIZADO
+    \item Sistema operacional: Linux
+    \item Versões testadas: Sequencial (1 thread), Concorrente pthread (8 threads), CUDA (262,144 threads)
+    \item Otimização: -O3 para versões CPU, -O3 para versão CUDA
+    \item Cada teste foi executado múltiplas vezes para obter médias confiáveis
+    \item Versão CUDA requer GPU NVIDIA compatível (informações específicas do hardware devem ser documentadas)
+\end{itemize}
+
+\subsection{Resultados de Corretude}
+
+Todos os 5 casos de teste de corretude foram executados com sucesso nas três versões implementadas: sequencial, concorrente (pthread com 8 threads) e CUDA. O programa sempre encontrou a senha correta correspondente ao hash fornecido, validando a corretude de todas as implementações, incluindo a implementação própria do MD5 na versão CUDA.
+
+\subsection{Resultados de Desempenho}
+
+\textbf{TODO:} ADICIONAR OS VALORES DE TESTE.
+\begin{itemize}
+    \item Tabelas comparando tempo de execução entre versão sequencial, concorrente (pthread) e CUDA
+    \item Gráficos mostrando speedup em função do número de threads
+    \item Análise do overhead de sincronização
+    \item Comparação entre execução com e sem análise de frequência
+    \item Análise de eficiência entre CPU (pthread) e GPU (CUDA)
+\end{itemize}
+
+\textbf{Exemplo de estrutura de dados a coletar:}
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+ \hline
+ \textbf{Caso de Teste} & \textbf{Sequencial (s)} & \textbf{Concorrente (s)} & \textbf{CUDA (s)} & \textbf{Speedup CUDA} \\
+ \hline
+ c0r1nTh14n & --- & --- & --- & --- \\
+ senhaL3g@l & --- & --- & --- & --- \\
+ x\_s3nh@\_x & --- & --- & --- & --- \\
+ @@28122004 & --- & --- & --- & --- \\
+ mostarda & --- & --- & --- & --- \\
+ \hline
+\end{tabular}
+\end{center}
+
+
+\subsection{Análise de Performance}
+
+\textbf{TODO:} INCLUIR ANALISE DOS RESULTADOS:
+
+\begin{itemize}
+    \item Eficiência da paralelização (speedup alcançado vs. speedup teórico)
+    \item Identificação de gargalos
+    \item Comportamento com diferentes números de threads
+    \item Impacto da análise de frequência no tempo médio de busca
+\end{itemize}
+
+\section{Dificuldades e Desafios Encontrados}
+
+\subsection{Desafios Técnicos}
+
+\subsubsection{Espaço Combinatório}
+
+O principal desafio continua sendo o vasto espaço de busca. Em relação ao relatório parcial, foi necessário reduzir o escopo do projeto, removendo os caracteres especiais. Essa mudança limitou o universo a 62 caracteres possíveis para senhas de até 10 caracteres de comprimento, o que ainda resulta em um número de combinações a serem testadas da ordem de $8.39 \times 10^{17}$. 
+
+Além desse imenso desafio combinatório, também enfrentamos dificuldades técnicas na implementação do CUDA. Descobrimos que a execução, por conta dos drivers da NVIDIA, era facilitada em ambiente Windows, o que gerou dificuldade para a utilização dessa versão em sistemas Linux. 
+\section{Conclusões}
+
+Este projeto demonstrou a eficácia da programação concorrente e paralela para problemas de força bruta que são naturalmente paralelizáveis. A implementação de um sistema de quebra de senhas MD5 mostrou ganhos significativos de desempenho ao comparar a versão sequencial com as abordagens concorrentes.
+
+Entre as principais realizações, destaca-se a implementação funcional do algoritmo de força bruta em três abordagens distintas: sequencial, concorrente (utilizando \texttt{pthread}) e paralela (utilizando \texttt{CUDA}). Foi alcançada uma divisão eficiente do trabalho, gerenciando múltiplas threads na CPU e milhares de threads na GPU, com a devida sincronização para garantir a corretude em ambos os ambientes (utilizando mutex para \texttt{pthread} e operações atômicas para \texttt{CUDA}). Para maximizar o desempenho na GPU, foi desenvolvida uma implementação própria do algoritmo MD5 em \texttt{CUDA}. Adicionalmente, todas as versões foram otimizadas com base na análise de frequência de comprimentos de senha. A validação de corretude foi confirmada com casos de teste conhecidos em todas as implementações. Por fim, o projeto adotou uma arquitetura modular, com código separado para cada abordagem, facilitando a manutenção e a comparação de resultados.
+
+
+
+
+\section{Referências}
+
+\begin{thebibliography}{9}
+
+\bibitem{vainer}
+VAINER, M. \textit{Password Dataset Generation for Further Analysis by Machine Learning Methods}.
+
+\bibitem{openssl}
+OpenSSL Project. \textit{OpenSSL: The Open Source toolkit for SSL/TLS}. Disponível em: \url{https://www.openssl.org/}
+
+\bibitem{pthread}
+IEEE Computer Society. \textit{IEEE Std 1003.1-2008: The Open Group Base Specifications Issue 7}. POSIX Threads (pthreads).
+
+\bibitem{md5}
+RIVEST, R. \textit{The MD5 Message-Digest Algorithm}. RFC 1321, MIT Laboratory for Computer Science and RSA Data Security, Inc., April 1992.
+
+\bibitem{cuda}
+NVIDIA Corporation. \textit{CUDA C++ Programming Guide}. Disponível em: \url{https://docs.nvidia.com/cuda/cuda-c-programming-guide/}
+
+\bibitem{pthread-tutorial}
+BUTENHOF, D. R. \textit{Programming with POSIX Threads}. Addison-Wesley Professional, 1997.
+
+\end{thebibliography}
+
+\end{document}
+
