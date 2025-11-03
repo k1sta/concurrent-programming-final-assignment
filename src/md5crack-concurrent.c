@@ -204,16 +204,27 @@ int main(int argc, char *argv[]) {
   //result buffer
   char result[MAX_PASSWORD_LEN + 1] = {0};
 
+  struct timespec start, end;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+
   // THE thing.
   bool success;
   success = crack_password_concurrent(target_hash, result);
 
+  clock_gettime(CLOCK_MONOTONIC, &end);
+
+  double time_taken = (end.tv_sec - start.tv_sec);
+  time_taken += (end.tv_nsec - start.tv_nsec) / 1000000000.0;
+    
   
   if (success) {
       printf("\nPassword found: %s\n", result);
   } else {
       printf("\nPassword not found.\n");
   }
+
+  printf("Tempo total de execucao (Concorrente) : %.2f ms (ou %.3f segundos)\n", 
+           time_taken *1000 , time_taken);
 
   return success ? 0 : 1;
 }
