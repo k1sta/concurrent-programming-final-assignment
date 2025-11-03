@@ -17,7 +17,7 @@ const bool debug = false;
 bool found = false;
 
 // charset: lowercase, uppercase, digits, and (some) special characters
-const char charset[] = "abcdefghijklmnijklmnopqrstuvwxyz"
+const char charset[] = "abcdefghijklmnopqrstuvwxyz"
                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                        "0123456789";
                         //"!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
@@ -132,9 +132,6 @@ void *brute_force_thread(void *arg) {
       // raw digest -> hex string
       bytes_to_hex(digest_raw, hash_hex_output, digest_len);
 
-      // debug output
-      if (debug == true) printf("%s - %s\n", pwd_candidate, hash_hex_output);
-
 
       if (strcmp(hash_hex_output, data->target_hash) == 0) {
         pthread_mutex_lock(data->mutex);
@@ -237,8 +234,7 @@ bool crack_password_sequential(const char *target_hash, char *result) {
       // raw digest -> hex string
       bytes_to_hex(digest_raw, hash_hex_output, digest_len);
 
-      // debug output
-      if (debug == true) printf("%s - %s\n", pwd_candidate, hash_hex_output);
+      
 
       if (strcmp(hash_hex_output, target_hash) == 0) {        // if the candidate hash matches the target hash, its over! we won!
         strcpy(result, pwd_candidate); 
@@ -266,9 +262,9 @@ int main(int argc, char *argv[]) {
     printf("Modes: -s (sequential), -c (concurrent) [default: concurrent]\n");
     printf("\nSome test cases:\n");
     printf("  cce36d2833156c007b1c6c644828ad37  -> c0r1nTh14n\n");
-    printf("  c3284ef15aa75f96b0945f19dad4b71f  -> senhaL3g@l\n");
-    printf("  94f4eee8528d877893b0cd27f42d1a67  -> x_s3nh@_x\n");
-    printf("  80e58b2df5e73db726074346775494d8  -> @@28122004\n");
+    printf("  4aef3d4d3dd9e36d3042309458b04314  -> senhaL3gal\n");
+    printf("  d6fe902a1d89be1731428be31caf9586  -> xXs3nh4Xx\n");
+    printf("  f8772716367e5a3b5145fff616c27ba1  -> 0028122004\n");
     printf("  b21f91d078060d5f655f5e8b5381f8a3  -> mostarda\n");
     return 1;
   }
@@ -283,9 +279,9 @@ int main(int argc, char *argv[]) {
       printf("Modes: -s (sequential), -c (concurrent) [default: concurrent]\n");
       printf("\nSome test cases:\n");
       printf("  cce36d2833156c007b1c6c644828ad37  -> c0r1nTh14n\n");
-      printf("  c3284ef15aa75f96b0945f19dad4b71f  -> senhaL3g@l\n");
-      printf("  94f4eee8528d877893b0cd27f42d1a67  -> x_s3nh@_x\n");
-      printf("  80e58b2df5e73db726074346775494d8  -> @@28122004\n");
+      printf("  4aef3d4d3dd9e36d3042309458b04314  -> senhaL3gal\n");
+      printf("  d6fe902a1d89be1731428be31caf9586  -> xXs3nh4Xx\n");
+      printf("  f8772716367e5a3b5145fff616c27ba1  -> 0028122004\n");
       printf("  b21f91d078060d5f655f5e8b5381f8a3  -> mostarda\n");
       return 1;
     }
