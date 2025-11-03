@@ -151,7 +151,6 @@ __global__ void crack_kernel(unsigned long long start_idx, int length, unsigned 
     
     uint32_t hash[4];
     md5_hash(pwd, length, hash);
-    
     if (hash[0] == d_target_hash[0] && hash[1] == d_target_hash[1] && 
         hash[2] == d_target_hash[2] && hash[3] == d_target_hash[3]) {
         int old = atomicCAS(found, 0, 1);
@@ -187,9 +186,9 @@ void hex_to_uint32(const char* hex, uint32_t* out) {
 
 int main() {
     const char charset[] = "abcdefghijklmnopqrstuvwxyz"
-                          "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                          "0123456789";
-                          //"!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                           "0123456789";
+                           //"!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
     
     const int length_order[] = {8, 7, 9, 10, 6, 5, 4, 3, 2, 1};
 
@@ -232,8 +231,15 @@ int main() {
     cudaMalloc(&d_result, MAX_PASSWORD_LEN + 1);
     cudaMemcpy(d_found, &h_found, sizeof(int), cudaMemcpyHostToDevice);
 
+    cudaEvent_t start_event, stop_event;
+    float milliseconds = 0;
+
+    cudaEventCreate(&start_event);
+    cudaEventCreate(&stop_event);
+
     printf("Starting CUDA brute force attack...\n");
-    printf("Target hash: %s\n\n", target_hash);
+
+    cudaEventRecord(start_event, 0);
 
     for (int l = 0; l < 10 && !h_found; l++) {
         int length = length_order[l];
@@ -262,11 +268,18 @@ int main() {
         printf("Progress: 100.00%%\n");
     }
 
+    cudaEventRecord(stop_event, 0);
+    cudaEventSynchronize(stop_event); // Espera a GPU terminar
+    cudaEventElapsedTime(&milliseconds, start_event, stop_event);
+
     if (h_found) {
         printf("\nPassword found: %s\n", h_result);
     } else {
         printf("\nPassword not found.\n");
     }
+
+    printf("Tempo total de execucao na GPU: %.2f ms (ou %.3f segundos)\n", 
+           milliseconds, milliseconds / 1000.0);
 
     cudaFree(d_found);
     cudaFree(d_result);
