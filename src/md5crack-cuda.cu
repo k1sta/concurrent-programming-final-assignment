@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #define MAX_PASSWORD_LEN 10
-#define CHARSET_SIZE 95
+#define CHARSET_SIZE 62
 #define BLOCK_SIZE 256
 #define BLOCKS_PER_GRID 1024
 
@@ -35,6 +35,7 @@ __device__ uint32_t leftrotate(uint32_t x, uint32_t c) {
     return (x << c) | (x >> (32 - c));
 }
 
+/*
 __device__ void md5_hash(const char* msg, int len, uint32_t* result) {
     uint32_t h0 = 0x67452301;
     uint32_t h1 = 0xefcdab89;
@@ -79,6 +80,52 @@ __device__ void md5_hash(const char* msg, int len, uint32_t* result) {
     result[1] = h1 + 0xefcdab89;
     result[2] = h2 + 0x98badcfe;
     result[3] = h3 + 0x10325476;
+}
+*/
+
+__device__ void md5_hash(const char* msg, int len, uint32_t* result) {
+    uint32_t a = 0x67452301;
+    uint32_t b = 0xefcdab89;
+    uint32_t c = 0x98badcfe;
+    uint32_t d = 0x10325476;
+
+    uint8_t buffer[64];
+    memset(buffer, 0, 64);
+    memcpy(buffer, msg, len);
+    buffer[len] = 0x80;
+    
+    uint32_t bits = len * 8;
+    memcpy(buffer + 56, &bits, 4);
+
+    uint32_t* w = (uint32_t*)buffer;
+
+    for (int i = 0; i < 64; i++) {
+        uint32_t f, g;
+        if (i < 16) {
+            f = (b & c) | ((~b) & d);
+            g = i;
+        } else if (i < 32) {
+            f = (d & b) | ((~d) & c);
+            g = (5 * i + 1) % 16;
+        } else if (i < 48) {
+            f = b ^ c ^ d;
+            g = (3 * i + 5) % 16;
+        } else {
+            f = c ^ (b | (~d));
+            g = (7 * i) % 16;
+        }
+
+        uint32_t temp = d;
+        d = c;
+        c = b;
+        b = b + leftrotate(a + f + d_k[i] + w[g], d_r[i]);
+        a = temp;
+    }
+
+    result[0] = a + 0x67452301;
+    result[1] = b + 0xefcdab89;
+    result[2] = c + 0x98badcfe;
+    result[3] = d + 0x10325476;
 }
 
 __device__ void generate_password(unsigned long long idx, int len, char* pwd) {
@@ -141,8 +188,8 @@ void hex_to_uint32(const char* hex, uint32_t* out) {
 int main() {
     const char charset[] = "abcdefghijklmnopqrstuvwxyz"
                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                          "0123456789"
-                          "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+                          "0123456789";
+                          //"!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
     
     const int length_order[] = {8, 7, 9, 10, 6, 5, 4, 3, 2, 1};
 
@@ -160,8 +207,21 @@ int main() {
     uint32_t h_target_hash[4];
     hex_to_uint32(target_hash, h_target_hash);
 
-    cudaMemcpyToSymbol(d_charset, charset, CHARSET_SIZE);
-    cudaMemcpyToSymbol(d_target_hash, h_target_hash, 4 * sizeof(uint32_t));
+    //cudaMemcpyToSymbol(d_charset, charset, CHARSET_SIZE);
+    //cudaMemcpyToSymbol(d_target_hash, h_target_hash, 4 * sizeof(uint32_t));
+
+  // ADD ERROR CHECKING HERE
+  cudaError_t err = cudaMemcpyToSymbol(d_charset, charset, CHARSET_SIZE);
+  if (err != cudaSuccess) {
+      printf("Error copying charset: %s\n", cudaGetErrorString(err));
+      return 1;
+  }
+
+  err = cudaMemcpyToSymbol(d_target_hash, h_target_hash, 4 * sizeof(uint32_t));
+  if (err != cudaSuccess) {
+    printf("Error copying target hash: %s\n", cudaGetErrorString(err));
+    return 1;
+  }
 
     int* d_found;
     char* d_result;
