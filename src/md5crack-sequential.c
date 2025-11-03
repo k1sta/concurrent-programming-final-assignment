@@ -109,6 +109,7 @@ bool crack_password_sequential(const char *target_hash, char *result) {
       // raw digest -> hex string
       bytes_to_hex(digest_raw, hash_hex_output, digest_len);
 
+
       if (strcmp(hash_hex_output, target_hash) == 0) {        // if the candidate hash matches the target hash, its over! we won!
         strcpy(result, pwd_candidate); 
         return true;
@@ -119,13 +120,22 @@ bool crack_password_sequential(const char *target_hash, char *result) {
   return false;
 }
 
-int main(void) {
-  
+int main(int argc, char *argv[]) {
+  if (argc != 2) {
+    fprintf(stderr, "Uso: %s <hash_md5>\n", argv[0]);
+    fprintf(stderr, "Exemplo: %s 5d41402abc4b2a76b9719d911017c592\n", argv[0]);
+    return 1;
+  }
+
+  if (strlen(argv[1]) != 32) {
+    fprintf(stderr, "Erro: O hash MD5 deve ter 32 caracteres.\n");
+    return 1;
+  }
+
   // collecting target hash
   char target_hash[33];
-  scanf("%32s", target_hash);
+  strncpy(target_hash, argv[1], 32);
   target_hash[32] = '\0';
-    
 
   // convert to lowercase for comparison
   for (int i = 0; i < 32; i++) {
@@ -143,11 +153,12 @@ int main(void) {
   bool success;
   success = crack_password_sequential(target_hash, result);
 
-   if (success) {
-    printf("found: %s\n", result);
-  } else {
-    printf("FAILED!\n");
-  }
+
+    if (success) {
+        printf("\nPassword found: %s\n", result);
+    } else {
+        printf("\nPassword not found.\n");
+    }
 
   return success ? 0 : 1;
 }
