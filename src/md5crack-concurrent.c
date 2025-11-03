@@ -14,7 +14,7 @@
 bool found = false;
 
 // charset: lowercase, uppercase, digits, and (some) special characters
-const char charset[] = "abcdefghijklmnijklmnopqrstuvwxyz"
+const char charset[] = "abcdefghijklmnopqrstuvwxyz"
                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                        "0123456789";
                        //"!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
@@ -95,7 +95,14 @@ void *brute_force_thread(void *arg) {
 
   // initiating context for md5 hashing
   EVP_MD_CTX *ctx = EVP_MD_CTX_new(); 
-  EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
+  
+ 
+  if (ctx == NULL) {
+    fprintf(stderr, "Erro: EVP_MD_CTX_new() falhou na thread %d\n", data->thread_id);
+    return NULL; 
+  }
+
+  EVP_DigestInit_ex(ctx, EVP_md5(), NULL);  
 
   // loop through all lengths assigned (e.g., length_order)
   for (int l = 0; l < 10 && !found; l++) {
@@ -135,7 +142,6 @@ void *brute_force_thread(void *arg) {
       }
     }
 
-   }
   }
 
   EVP_MD_CTX_free(ctx);    
@@ -169,9 +175,20 @@ bool crack_password_concurrent(const char *target_hash, char *result) {
 }
 
 int main(int argc, char *argv[]) {
+  if (argc != 2) {
+    fprintf(stderr, "Uso: %s <hash_md5>\n", argv[0]);
+    fprintf(stderr, "Exemplo: %s 5d41402abc4b2a76b9719d911017c592\n", argv[0]);
+    return 1;
+  }
+
+  if (strlen(argv[1]) != 32) {
+    fprintf(stderr, "Erro: O hash MD5 deve ter 32 caracteres.\n");
+    return 1;
+  }
+
   // collecting target hash
   char target_hash[33];
-  scanf("%32s", target_hash);
+  strncpy(target_hash, argv[1], 32);
   target_hash[32] = '\0';
     
 
@@ -191,10 +208,11 @@ int main(int argc, char *argv[]) {
   bool success;
   success = crack_password_concurrent(target_hash, result);
 
+  
   if (success) {
-    printf("found: %s\n", result);
+      printf("\nPassword found: %s\n", result);
   } else {
-    printf("FAILED!\n");
+      printf("\nPassword not found.\n");
   }
 
   return success ? 0 : 1;
