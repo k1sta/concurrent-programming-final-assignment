@@ -79,12 +79,12 @@ Para tornar o problema tratável computacionalmente, estabelecemos as seguintes 
 
 \begin{itemize}
     \item \textbf{Comprimento máximo de senha:} 10 caracteres ($M = 10$)
-    \item \textbf{Conjunto de caracteres:} 62 caracteres no total, incluindo:
+    \item \textbf{Conjunto de caracteres:} 26 caracteres no total, incluindo:
     \begin{itemize}
-        \item 52 letras (26 minúsculas + 26 maiúsculas)
-        \item 10 dígitos (0-9)
+        \item 26 letras minúsculas 
+        
     \end{itemize}
-    \item \textbf{Espaço de busca:} $62^{10} \approx 8.39 \times 10^{17}$ combinações possíveis
+    \item \textbf{Espaço de busca:} $26^{10} \approx 1.41 \times 10^{14}$ combinações possíveis
 \end{itemize}
 
 Dado o tamanho do espaço de busca, uma busca exaustiva completa seria impraticável mesmo com paralelização. Portanto, implementamos estratégias de otimização baseadas em análise de frequência de comprimentos de senha para priorizar testes mais prováveis.
@@ -99,7 +99,7 @@ Nesse contexto, teremos um conjunto de strings de comprimento $N$, tal que $1 \l
 
 \subsection{Balanceamento de Carga}
 
-A estratégia de balanceamento de carga entre threads utiliza uma abordagem de intervalos contínuos. Para um dado comprimento de senha $l$, o número total de combinações é $total = 62^l$. Cada thread com identificador $id$ (de 0 a $n-1$, onde $n$ é o número de threads) recebe um intervalo:
+A estratégia de balanceamento de carga entre threads utiliza uma abordagem de intervalos contínuos. Para um dado comprimento de senha $l$, o número total de combinações é $total = 26^l$. Cada thread com identificador $id$ (de 0 a $n-1$, onde $n$ é o número de threads) recebe um intervalo:
 
 \begin{align*}
 \text{start}_{\text{id}} &= \frac{\text{total} \times \text{id}}{n} \\
@@ -110,14 +110,14 @@ Esta divisão garante que todas as combinações sejam testadas exatamente uma v
 
 \subsection{Geração de Senhas Candidatas}
 
-Para gerar uma senha candidata a partir de um índice numérico, utilizamos uma técnica de conversão de base. O índice é interpretado como um número em base $CHARSET\_SIZE$ (62), onde cada dígito corresponde a um caractere do conjunto permitido.
+Para gerar uma senha candidata a partir de um índice numérico, utilizamos uma técnica de conversão de base. O índice é interpretado como um número em base $CHARSET\_SIZE$ (26), onde cada dígito corresponde a um caractere do conjunto permitido.
 
 A função \texttt{generate\_pwd\_candidate} implementa essa conversão iterando do último caractere para o primeiro:
 
 \begin{enumerate}
     \item Para cada posição $i$ da senha (do último para o primeiro):
-    \item O caractere na posição $i$ é determinado por $charset[index \mod 62]$
-    \item O índice é atualizado para $index \div 62$
+    \item O caractere na posição $i$ é determinado por $charset[index \mod 26]$
+    \item O índice é atualizado para $index \div 26$
     \item Repete até todas as posições serem preenchidas
 \end{enumerate}
 
@@ -186,7 +186,7 @@ Gera uma senha candidata a partir de um índice numérico utilizando conversão 
 
 \subsubsection{\texttt{total\_combinations}}
 
-Calcula o número total de combinações possíveis para um dado comprimento: $62^l$.
+Calcula o número total de combinações possíveis para um dado comprimento: $26^l$.
 
 \subsubsection{\texttt{brute\_force\_thread}}
 
@@ -226,7 +226,7 @@ A versão CUDA (\texttt{md5crack-cuda.cu}) implementa uma abordagem completament
     \item \textbf{MD5 na GPU:} Implementação própria do algoritmo MD5 diretamente no kernel CUDA, evitando transferências de dados desnecessárias
     \item \textbf{Memória constante:} Utiliza memória constante (\texttt{\_\_constant\_\_}) para armazenar o charset, hash alvo e constantes MD5, otimizando acesso na GPU
     \item \textbf{Atomic operations:} Utiliza \texttt{atomicCAS} para sincronização quando a senha é encontrada, garantindo que apenas uma thread escreva o resultado
-    \item \textbf{Grid/Block configuration:} Configuração de 1024 blocos com 256 threads cada (262,144 threads simultâneas)
+    \item \textbf{Grid/Block configuration:} Configuração de 1024 blocos com 256 threads cada (226,144 threads simultâneas)
 \end{itemize}
 
 \textbf{Kernel CUDA:} A função \texttt{crack\_kernel} é executada por cada thread na GPU:
@@ -305,11 +305,9 @@ Para validar a corretude da implementação, utilizamos 5 casos de teste com sen
  \hline
  \textbf{Hash MD5 (Input)} & \textbf{Senha (Output esperado)} \\
  \hline
- cce36d2833156c007b1c6c644828ad37 & c0r1nTh14n \\
- 4aef3d4d3dd9e36d3042309458b04314 & senhaL3gal \\
- d6fe902a1d89be1731428be31caf9586 & xXs3nh4Xx \\
- f8772716367e5a3b5145fff616c27ba1 & 0028122004 \\
- b21f91d078060d5f655f5e8b5381f8a3 & mostarda \\
+ d79096188b670c2f81b7001f73801117 & passw \\
+ dfbe9b84722f27c60aade2595f9f66da & senhas \\
+ f4cc08fa20e1167cba660c5fae1f2a1a & flamengo \\
  \hline
 \end{tabular}
 \end{center}
@@ -335,7 +333,7 @@ Cada teste foi executado múltiplas vezes, e os tempos de execução foram medid
 Os testes foram executados em dois sistema com as seguintes características:
 \begin{itemize}
     \item Sistema operacional: Windows
-    \item Versões testadas:  CUDA (262,144 threads)
+    \item Versões testadas:  CUDA (226,144 threads)
     \item Otimização: -O3 para versão CUDA
     \item Devido ao alto tempo de execução foi executado 1 vez para cada teste.
     \item Versão CUDA 13.0 e GPU NVIDIA GTX 1660 8GB 
@@ -343,15 +341,16 @@ Os testes foram executados em dois sistema com as seguintes características:
 \begin{itemize}
     \item \textbf{TODO:} PREENCHER AS CONFIGS DO SISTEMA UTILIZADO
     \item Sistema operacional: Linux
-    \item Versões testadas: Sequencial (1 thread), Concorrente pthread (8 threads), CUDA (262,144 threads)
+    \item Versões testadas: Sequencial (1 thread), Concorrente pthread (8 threads), CUDA (226,144 threads)
     \item Otimização: -O3 para versões CPU, -O3 para versão CUDA
     \item Cada teste foi executado múltiplas vezes para obter médias confiáveis
     \item Versão CUDA requer GPU NVIDIA compatível (informações específicas do hardware devem ser documentadas)
 \end{itemize}
 
+
 \subsection{Resultados de Corretude}
 
-Todos os 5 casos de teste de corretude foram executados com sucesso nas três versões implementadas: sequencial, concorrente (pthread com 8 threads) e CUDA. O programa sempre encontrou a senha correta correspondente ao hash fornecido, validando a corretude de todas as implementações, incluindo a implementação própria do MD5 na versão CUDA.
+Todos os 3 casos de teste de corretude foram executados com sucesso nas três versões implementadas: sequencial, concorrente (pthread com 8 threads) e CUDA. O programa sempre encontrou a senha correta correspondente ao hash fornecido, validando a corretude de todas as implementações, incluindo a implementação própria do MD5 na versão CUDA.
 
 \subsection{Resultados de Desempenho}
 
@@ -360,26 +359,34 @@ Todos os 5 casos de teste de corretude foram executados com sucesso nas três ve
     \item Tabelas comparando tempo de execução entre versão sequencial, concorrente (pthread) e CUDA
     \item Gráficos mostrando speedup em função do número de threads
     \item Análise do overhead de sincronização
-    \item Comparação entre execução com e sem análise de frequência
     \item Análise de eficiência entre CPU (pthread) e GPU (CUDA)
 \end{itemize}
 
 \textbf{Exemplo de estrutura de dados a coletar:}
 
 \begin{center}
-\begin{tabular}{|c|c|c|c|c|}
+\begin{tabular}{|c|c|c|c|}
  \hline
- \textbf{Caso de Teste} & \textbf{Sequencial (s)} & \textbf{Concorrente (s)} & \textbf{CUDA (s)} & \textbf{Speedup CUDA} \\
+ \textbf{Caso de Teste} & \textbf{Sequencial (s)} & \textbf{Concorrente (s)} & \textbf{CUDA (s)}  \\
  \hline
- c0r1nTh14n & --- & --- & --- & --- \\
- senhaL3g@l & --- & --- & --- & --- \\
- x\_s3nh@\_x & --- & --- & --- & --- \\
- @@28122004 & --- & --- & --- & --- \\
- mostarda & --- & --- & --- & --- \\
+ passw & --- & --- & ---  \\
+ senhas & 75,60&10,73& ---  \\
+ flamengo & --- & --- & --- \\
  \hline
 \end{tabular}
 \end{center}
 
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+ \hline
+ \textbf{Caso de Teste} & \textbf{Eficiência} & \textbf{Speedup} & \textbf{Speedup CUDA}  \\
+ \hline
+ passw & --- & --- & ---  \\
+ senhas & 0.88 & 7.05 & ---  \\
+ flamengo & --- & --- & --- \\
+ \hline
+\end{tabular}
+\end{center}
 
 \subsection{Análise de Performance}
 
@@ -392,15 +399,17 @@ Todos os 5 casos de teste de corretude foram executados com sucesso nas três ve
     \item Impacto da análise de frequência no tempo médio de busca
 \end{itemize}
 
-\section{Dificuldades e Desafios Encontrados}
-
 \subsection{Desafios Técnicos}
 
 \subsubsection{Espaço Combinatório}
 
 O principal desafio continua sendo o vasto espaço de busca. Em relação ao relatório parcial, foi necessário reduzir o escopo do projeto, removendo os caracteres especiais. Essa mudança limitou o universo a 62 caracteres possíveis para senhas de até 10 caracteres de comprimento, o que ainda resulta em um número de combinações a serem testadas da ordem de $8.39 \times 10^{17}$. 
 
+\subsubsection{Implementação CUDA}
 Além desse imenso desafio combinatório, também enfrentamos dificuldades técnicas na implementação do CUDA. Descobrimos que a execução, por conta dos drivers da NVIDIA, era facilitada em ambiente Windows, o que gerou dificuldade para a utilização dessa versão em sistemas Linux. 
+
+\subsubsection{Análise de Frequência}
+\section{Conclusões}
 \section{Conclusões}
 
 Este projeto demonstrou a eficácia da programação concorrente e paralela para problemas de força bruta que são naturalmente paralelizáveis. A implementação de um sistema de quebra de senhas MD5 mostrou ganhos significativos de desempenho ao comparar a versão sequencial com as abordagens concorrentes.
