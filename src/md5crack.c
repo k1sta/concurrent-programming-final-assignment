@@ -8,7 +8,7 @@
 
 #define MAX_PASSWORD_LEN 8
 #define NUM_THREADS 16
-#define CHARSET_SIZE 26
+#define CHARSET_SIZE 23
 
 // debug flag for detailed output (testing)
 const bool debug = false;
@@ -103,7 +103,7 @@ void *brute_force_thread(void *arg) {
 
   // loop through all lengths assigned (e.g., length_order)
   for (int l = 0; l < MAX_PASSWORD_LEN && !found; l++) {
-    int length = length_order[l]; // get the length to test
+    int length = l+1; //length_order[l]; for frequency analysis usage
     
     pwd_candidate[length] = '\0'; // set only one time the trailing char
 
@@ -120,7 +120,7 @@ void *brute_force_thread(void *arg) {
      // password-checking loop based on the assigned length
     for (unsigned long long i = start; i < end && !found; i++) {
       generate_pwd_candidate(i, length, pwd_candidate); // generate_pwd_candidate
-
+      
       // initialize the context for a new hash (null reutilizes the EVP_md5() callled before :D)
       EVP_DigestInit_ex(ctx, NULL, NULL); 
 
@@ -213,7 +213,7 @@ bool crack_password_sequential(const char *target_hash, char *result) {
 
   // loops for every lengthfor (int l = 0; l < 10; l++) {
   for(int l = 0; l < MAX_PASSWORD_LEN; l++){
-    int length = length_order[l]; // grabs length from frequency analysis
+    int length = l+1; // length_order[l]; for frequency analysis usage
     printf("Testing passwords of length %d...\n", length);  
       
     unsigned long long total = total_combinations(length);
