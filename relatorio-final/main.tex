@@ -330,23 +330,32 @@ Cada teste foi executado múltiplas vezes, e os tempos de execução foram medid
 
 \subsection{Metodologia}
 
-Os testes foram executados em dois sistema com as seguintes características:
-\begin{itemize}
-    \item Sistema operacional: Windows
-    \item Versões testadas:  CUDA (226,144 threads)
-    \item Otimização: -O3 para versão CUDA
-    \item Devido ao alto tempo de execução foi executado 1 vez para cada teste.
-    \item Versão CUDA 13.0 e GPU NVIDIA GTX 1660 8GB 
+Os testes foram executados em três sistema com as seguinte característica:
+\begin{enumerate}
+
+\item \begin{itemize}
+    \item CPU: 12th Gen Intel i5-12400 (12 threads) @ 4.400GHz
+    \item Sistema operacional:Ubuntu 22.04.5 LTS 
+    \item Kernel: 6.8.0-86-generic
+    \item Versões testadas: Sequencial (1 thread), Concorrente pthread (8 threads)
+    \item Memória: 8695MiB | 23758MiB
+    \item Otimização: -O3 para versões CPU
+    \item Cada teste foi executado 5 vezes para obter médias confiáveis
+    \item GPU: Intel Device 4692
 \end{itemize}
-\begin{itemize}
-    \item \textbf{TODO:} PREENCHER AS CONFIGS DO SISTEMA UTILIZADO
-    \item Sistema operacional: Linux
-    \item Versões testadas: Sequencial (1 thread), Concorrente pthread (8 threads), CUDA (226,144 threads)
-    \item Otimização: -O3 para versões CPU, -O3 para versão CUDA
-    \item Cada teste foi executado múltiplas vezes para obter médias confiáveis
-    \item Versão CUDA requer GPU NVIDIA compatível (informações específicas do hardware devem ser documentadas)
+\item \begin{itemize}
+    \item CPU: 13th Gen Intel i7-13700 (24 threads) @ 5.100GHz
+    \item Sistema operacional:Ubuntu 24.04.2 LTS 
+    \item Kernel: 6.14.0-33-generic
+    \item Versões testadas: Sequencial,  Concorrente pthread (8 threads), CUDA (226,144 threads)
+    \item Memória: 15639 MiB
+    \item Otimização: -O3 para versão CUDA
+    \item Cada teste foi executado 5 vezes para obter médias confiáveis
+    \item GPU: NVIDIA GeForce RTX 3060 Lite Hash Rate
 \end{itemize}
 
+
+\end{enumerate}
 
 \subsection{Resultados de Corretude}
 
@@ -354,35 +363,30 @@ Todos os 3 casos de teste de corretude foram executados com sucesso nas três ve
 
 \subsection{Resultados de Desempenho}
 
-\textbf{TODO:} ADICIONAR OS VALORES DE TESTE.
-\begin{itemize}
-    \item Tabelas comparando tempo de execução entre versão sequencial, concorrente (pthread) e CUDA
-    \item Gráficos mostrando speedup em função do número de threads
-    \item Análise do overhead de sincronização
-    \item Análise de eficiência entre CPU (pthread) e GPU (CUDA)
-\end{itemize}
-
-\textbf{Exemplo de estrutura de dados a coletar:}
+\textbf{Foram obtidos os seguintes resultados:}
 
 \begin{center}
 \begin{tabular}{|c|c|c|c|}
  \hline
  \textbf{Caso de Teste} & \textbf{Sequencial (s)} & \textbf{Concorrente (s)} & \textbf{CUDA (s)}  \\
  \hline
- passw & --- & --- & ---  \\
- senhas & 75,60&10,73& ---  \\
- flamengo & --- & --- & --- \\
+ passw & 2,74 & 0,33 & 0,008  \\
+ senhas & 75,60&10,73& 0,241  \\
+ flamengo* & --- & 449,85  & 53,78 \\
  \hline
 \end{tabular}
 \end{center}
+A senha "flamengo" foi testada na mesma máquina que utilizamos para executar os testes CUDA. Ele foi o único que teve 
+
+\textbf{Calculando as métricas de desempenho:}
 
 \begin{center}
 \begin{tabular}{|c|c|c|c|}
  \hline
  \textbf{Caso de Teste} & \textbf{Eficiência} & \textbf{Speedup} & \textbf{Speedup CUDA}  \\
  \hline
- passw & --- & --- & ---  \\
- senhas & 0.88 & 7.05 & ---  \\
+ passw & 1,03 &  8,30 &  342,50  \\
+ senhas & 0,88 & 7,05 & 313,69  \\
  flamengo & --- & --- & --- \\
  \hline
 \end{tabular}
@@ -390,14 +394,9 @@ Todos os 3 casos de teste de corretude foram executados com sucesso nas três ve
 
 \subsection{Análise de Performance}
 
-\textbf{TODO:} INCLUIR ANALISE DOS RESULTADOS:
+Analisando a diferença de performances de cada código, podemos ver não só o aumento exponencial do tempo de processamento conforme o tamanho da senha aumenta, como também speedup significativo do programa com o uso de threads concorrentes, especialmente com o uso da grande quantidade de threads em uma placa de vídeo com o uso de CUDA.
 
-\begin{itemize}
-    \item Eficiência da paralelização (speedup alcançado vs. speedup teórico)
-    \item Identificação de gargalos
-    \item Comportamento com diferentes números de threads
-    \item Impacto da análise de frequência no tempo médio de busca
-\end{itemize}
+Um gargalo que notamos no processamento das senhas ocorre quando o programa começa a testar senhas de grandes quantidades de senhas (por exemplo, na quantidade 10 ou 9). Isso demonstra a segurança que senhas maiores teriam em um caso real de quebra de hash, aumentando exponencialmente o tempo de processamento.
 
 \subsection{Desafios Técnicos}
 
@@ -409,14 +408,13 @@ O principal desafio continua sendo o vasto espaço de busca. Em relação ao rel
 Além desse imenso desafio combinatório, também enfrentamos dificuldades técnicas na implementação do CUDA. Descobrimos que a execução, por conta dos drivers da NVIDIA, era facilitada em ambiente Windows, o que gerou dificuldade para a utilização dessa versão em sistemas Linux. 
 
 \subsubsection{Análise de Frequência}
+Devido ao limite computacional , optamos por não utilizar a analise de frequencia ja que iria aumentaria substancialmente o tempo de execução de um único teste. e o nosso objetivo é comparar a execução sequencial com a concorrente demonstrando o ganho
 \section{Conclusões}
-\section{Conclusões}
+
 
 Este projeto demonstrou a eficácia da programação concorrente e paralela para problemas de força bruta que são naturalmente paralelizáveis. A implementação de um sistema de quebra de senhas MD5 mostrou ganhos significativos de desempenho ao comparar a versão sequencial com as abordagens concorrentes.
 
 Entre as principais realizações, destaca-se a implementação funcional do algoritmo de força bruta em três abordagens distintas: sequencial, concorrente (utilizando \texttt{pthread}) e paralela (utilizando \texttt{CUDA}). Foi alcançada uma divisão eficiente do trabalho, gerenciando múltiplas threads na CPU e milhares de threads na GPU, com a devida sincronização para garantir a corretude em ambos os ambientes (utilizando mutex para \texttt{pthread} e operações atômicas para \texttt{CUDA}). Para maximizar o desempenho na GPU, foi desenvolvida uma implementação própria do algoritmo MD5 em \texttt{CUDA}. Adicionalmente, todas as versões foram otimizadas com base na análise de frequência de comprimentos de senha. A validação de corretude foi confirmada com casos de teste conhecidos em todas as implementações. Por fim, o projeto adotou uma arquitetura modular, com código separado para cada abordagem, facilitando a manutenção e a comparação de resultados.
-
-
 
 
 \section{Referências}
